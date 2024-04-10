@@ -208,7 +208,7 @@ function App() {
             <div className="App">
                 <Backdrop
                     sx={{
-                        color:'#fff',
+                        color: '#fff',
                         zIndex: (theme) => theme.zIndex.drawer + 1,
                     }}
                     open={pleaseRotate}
