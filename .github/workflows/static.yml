@@ -1,52 +1,18 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
-
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["master"]
+    branches:
+      - "main" # change to the branch you wish to deploy from
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow one concurrent deployment
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: git submodule update --init
-      - name: Prepare Directory
-        run: mkdir -p -v ./public/database/runways
-      - name: Copy the submodule
-        run: cp -R ./runways/icao/ ./public/database/runways/
-      - name: Deploy React to GitHub Pages
-        env:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-        # You may pin to the exact commit or the version.
-        # uses: bitovi/github-actions-react-to-ghp@1782b3410beca05fb72bd089e5620790c0c4d883
-        uses: bitovi/github-actions-react-to-ghp@v1.2.0
-        with:
-          # Specifies if this action should checkout the code
-          checkout: false
-          # Specifies the path of the static assets after building
-          path: ./build
-          # Specifies the command to run after npm ci for the build
-          build_command: npm run build
+    - id: build-publish
+      uses: bitovi/github-actions-react-to-github-pages@v1.2.2
+      with:
+        path: build # change to your build folder
