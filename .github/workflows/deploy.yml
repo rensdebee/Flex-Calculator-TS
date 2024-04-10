@@ -1,7 +1,8 @@
-on:
+name: Deploy
+on: 
   push:
-    branches:
-      - main # change to the branch you wish to deploy from
+    # only trigger on branches, not on tags
+    branches: '**'
 
 permissions:
   contents: read
