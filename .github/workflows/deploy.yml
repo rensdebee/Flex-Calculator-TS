@@ -8,7 +8,12 @@ permissions:
   contents: read
   pages: write
   id-token: write
-
+  
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,4 +32,6 @@ jobs:
         API_TOKEN: ${{ secrets.API_TOKEN }}
       uses: bitovi/github-actions-react-to-github-pages@v1.2.2
       with:
+        # Specifies if this action should checkout the code
+        checkout: false
         path: build # change to your build folder
