@@ -15,6 +15,7 @@ import {
     MetarForm,
     RunwaysForm,
 } from './formdefs';
+import { calculateDeviation, deviation } from './magneticdeviation';
 import { fetchMetar } from './metar';
 
 export const useApi = (): [
@@ -131,7 +132,7 @@ export const useApi = (): [
         }
         if (
             settings.togaRequiredRunway >
-            FlexMath.parseDist(settings.availRunway, true)
+            FlexMath.parseDist(settings.availRunway, false)
         ) {
             takeoffInvalid = true;
             m =
@@ -144,8 +145,6 @@ export const useApi = (): [
         setRunwayStateDispatcher((state) => {
             return {
                 ...state,
-                wind: settings.windHeading,
-                windSpeed: settings.windKts,
                 asd: takeoffInvalid
                     ? 0
                     : ret.flex < ret.minFlex || signal
@@ -171,10 +170,13 @@ export const useApi = (): [
     };
 
     const getRunways = async (icao: string) => {
+        let magneticH = 0;
+        let magneticL = 0;
         fetch('./database/runways/icao/' + icao + '.json')
             .then((response) => response.json())
-            .then((data) => {
+            .then(async (data) => {
                 let dataMissing = false;
+                let magneticCalculated = false;
                 let extrapolatedHeadingH,
                     extrapolatedHeadingL = '0';
                 const rws = data.runways;
@@ -191,10 +193,40 @@ export const useApi = (): [
                             rws[i].le_ident.substring(0, 2) + '0';
                         dataMissing = true;
                     }
+                    // TODO: Add support for runway magnetic heading via API
+                    // https://www.ngdc.noaa.gov/geomag-web/calculators/calculateDeclination?lat1=40&lon1=-105.25&key={env.API_TOKEN}&resultFormat=json
+                    if (!dataMissing) {
+                        const lat = data.latitude_deg;
+                        const lon = data.longitude_deg;
+                        const magneticDeviation = deviation(lat, lon);
+                        magneticH = calculateDeviation(
+                            magneticDeviation,
+                            rws[i].he_heading_degT,
+                            parseFloat(lon) < 0
+                        );
+                        magneticL = calculateDeviation(
+                            magneticDeviation,
+                            rws[i].le_heading_degT,
+                            parseFloat(lon) < 0
+                        );
+                        // console.log(
+                        //     rws[i].le_heading_degT,
+                        //     magneticL,
+                        //     magneticDeviation
+                        // );
+                        // console.log(
+                        //     rws[i].he_heading_degT,
+                        //     magneticH,
+                        //     magneticDeviation
+                        // );
+                        magneticCalculated = true;
+                    }
                     rwList.push({
                         value: rws[i].he_ident,
                         heading: dataMissing
                             ? extrapolatedHeadingH
+                            : magneticCalculated
+                            ? magneticH
                             : rws[i].he_heading_degT,
                         elevation: data.elevation_ft,
                         length: rws[i].length_ft,
@@ -203,6 +235,8 @@ export const useApi = (): [
                         value: rws[i].le_ident,
                         heading: dataMissing
                             ? extrapolatedHeadingL
+                            : magneticCalculated
+                            ? magneticL
                             : rws[i].le_heading_degT,
                         elevation: data.elevation_ft,
                         length: rws[i].length_ft,
